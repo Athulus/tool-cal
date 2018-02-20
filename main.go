@@ -8,19 +8,14 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/kr/pretty"
 )
 
-var tools = make(map[string]*calendar)
+var tools = make(map[string]calendar)
 
 func main() {
-	pretty.Println(time.Now().Format(time.RFC3339))
-	tools["printer"] = new(calendar)
-	tools["laser"] = new(calendar)
-	tools["cnc"] = new(calendar)
+	log.Println(time.Now().Format(time.RFC3339))
 
 	router := mux.NewRouter()
-	router.Use(toolValidation)
 	router.HandleFunc("/health", health)
 	router.HandleFunc("/calendar/{tool}/events", getEvents).Methods("GET")
 	router.HandleFunc("/calendar/{tool}/events", addEvent).Methods("POST")
@@ -50,13 +45,14 @@ func addEvent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Println(event)
-	err = tools[tool].addEvent(event)
+	err = calendar(tool).addEvent(event)
 	if err != nil {
 		w.WriteHeader(http.StatusConflict)
 		w.Write([]byte("could not add the event: " + err.Error()))
 		return
 	}
 	w.WriteHeader(http.StatusCreated)
+	w.Header().Set("Content-Type", "application/json")
 	w.Write(body)
 
 }
@@ -64,11 +60,12 @@ func addEvent(w http.ResponseWriter, r *http.Request) {
 func getEvents(w http.ResponseWriter, r *http.Request) {
 	tool := mux.Vars(r)["tool"]
 	log.Println(tool)
-	log.Println(tools[tool].events)
-	events, err := json.Marshal(tools[tool].events)
+	log.Println(calendar(tool).fetchEvents())
+	events, err := json.Marshal(calendar(tool).fetchEvents())
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("could not fetch events for the " + tool))
 	}
+	w.Header().Set("Content-Type", "application/json")
 	w.Write(events)
 }

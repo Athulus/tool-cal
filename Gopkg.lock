@@ -15,19 +15,13 @@
 
 [[projects]]
   branch = "master"
-  name = "github.com/kr/pretty"
-  packages = ["."]
-  revision = "cfb55aafdaf3ec08f0db22699ab822c50091b1c4"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/kr/text"
-  packages = ["."]
-  revision = "7cafcd837844e784b526369c9bce262804aebc60"
+  name = "github.com/mediocregopher/radix.v2"
+  packages = ["pool","redis"]
+  revision = "4699b97613b74db996094bf03e19dd2ae90d8bbc"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "64805acca95de6e42d03885fd87b5c6ddf09a5a7f1c548db54b6283ab1cb0242"
+  inputs-digest = "65c3a0c2acfa59816e5491ad8d1946a55a172f49b406a4c67ff49ef237dec372"
   solver-name = "gps-cdcl"
   solver-version = 1
