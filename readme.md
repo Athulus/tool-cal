@@ -15,7 +15,5 @@
      - events
         - GET: return a list of events currently scheduled for the tool
         - POST: add an event to a tools calendar
-   - POST: add a new tool calendar
-   - GET: get all current tool calendars
-   - DELTE: delete a tool calendar
+        - DELETE: delete an calendars event
     
