@@ -2,6 +2,24 @@
 
 
 [[projects]]
+  branch = "master"
+  name = "github.com/alicebob/gopher-json"
+  packages = ["."]
+  revision = "5a6b3ba71ee69b77cf64febf8b5a7526ca5eaef0"
+
+[[projects]]
+  name = "github.com/alicebob/miniredis"
+  packages = [".","server"]
+  revision = "9d52b1fc8da9c42dae29127fdc6f795ddcd4810f"
+  version = "2.3.2"
+
+[[projects]]
+  name = "github.com/garyburd/redigo"
+  packages = ["internal","redis"]
+  revision = "d1ed5c67e5794de818ea85e6b522fda02623a484"
+  version = "v1.5.0"
+
+[[projects]]
   name = "github.com/gorilla/context"
   packages = ["."]
   revision = "1ea25387ff6f684839d82767c1733ff4d4d15d0a"
@@ -19,9 +37,15 @@
   packages = ["pool","redis"]
   revision = "4699b97613b74db996094bf03e19dd2ae90d8bbc"
 
+[[projects]]
+  branch = "master"
+  name = "github.com/yuin/gopher-lua"
+  packages = [".","ast","parse","pm"]
+  revision = "7d7bc8747e3f614c5c587729a341fe7d8903cdb8"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "65c3a0c2acfa59816e5491ad8d1946a55a172f49b406a4c67ff49ef237dec372"
+  inputs-digest = "221ba9114bfd57279f535b4de34d60117ae76c8ebc18bf6a59c8ab5807315e1f"
   solver-name = "gps-cdcl"
   solver-version = 1

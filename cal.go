@@ -3,18 +3,25 @@ package main
 import (
 	"errors"
 	"log"
+	"os"
 	"time"
 
 	"github.com/mediocregopher/radix.v2/pool"
 )
 
 var db *pool.Pool
+var redisAddress string
 
 func init() {
 	var err error
-
+	var exists bool
+	redisAddress, exists = os.LookupEnv("redisAddress")
+	if !exists {
+		// try localhost if envvironment variable is not set
+		redisAddress = "localhost:6379"
+	}
 	//set up redis
-	db, err = pool.New("tcp", "localhost:6379", 10)
+	db, err = pool.New("tcp", redisAddress, 10)
 	if err != nil {
 		log.Panic(err)
 	}
@@ -35,7 +42,6 @@ func (cal calendar) fetchEvents() []Event {
 	if err != nil {
 		log.Fatalln(err.Error())
 	}
-	log.Println(keys)
 
 	for _, key := range keys {
 		var event Event
@@ -112,11 +118,11 @@ func (e *Event) New(eventMap map[string]string) {
 	if err != nil {
 		log.Fatalln(err.Error())
 	}
-	e.Description, ok = eventMap["Description"]
+	e.Description, ok = eventMap["description"]
 	if !ok {
 		log.Fatalln("problem creating event: description")
 	}
-	e.Owner, ok = eventMap["Owner"]
+	e.Owner, ok = eventMap["owner"]
 	if !ok {
 		log.Fatalln("problem creating event: owner")
 	}
