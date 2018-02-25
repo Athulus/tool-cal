@@ -33,6 +33,18 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/kr/pretty"
+  packages = ["."]
+  revision = "cfb55aafdaf3ec08f0db22699ab822c50091b1c4"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/kr/text"
+  packages = ["."]
+  revision = "7cafcd837844e784b526369c9bce262804aebc60"
+
+[[projects]]
+  branch = "master"
   name = "github.com/mediocregopher/radix.v2"
   packages = ["pool","redis"]
   revision = "4699b97613b74db996094bf03e19dd2ae90d8bbc"
@@ -46,6 +58,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "221ba9114bfd57279f535b4de34d60117ae76c8ebc18bf6a59c8ab5807315e1f"
+  inputs-digest = "3a94e5f3f4169ad6818c3757d5e85617b54eaf383dbf9b9a8de9efa4bdf44b09"
   solver-name = "gps-cdcl"
   solver-version = 1

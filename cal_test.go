@@ -31,9 +31,9 @@ func testInit() (x struct{}) {
 	startTimeSeed, err = time.Parse(time.RFC3339, "2018-02-21T01:00:00-00:00")
 	endTimeSeed, err = time.Parse(time.RFC3339, "2018-02-21T01:59:00-00:00")
 	//toplevel collection of calendars
-	s.Lpush("cals", "laser")
+	s.Lpush("cals", "test")
 	// adding event keys to a 'laser' calendar
-	s.Lpush("laser", startTimeSeed.Format(time.RFC3339))
+	s.Lpush("test", startTimeSeed.Format(time.RFC3339))
 	//adding events
 	s.HSet(startTimeSeed.Format(time.RFC3339), "startTime", startTimeSeed.Format(time.RFC3339))
 	s.HSet(startTimeSeed.Format(time.RFC3339), "endTime", endTimeSeed.Format(time.RFC3339))
@@ -42,18 +42,13 @@ func testInit() (x struct{}) {
 
 	return
 }
-
-// func tearDown() {
-// 	s.Close()
-// }
 func Test_calendar_fetchEvents(t *testing.T) {
 	tests := []struct {
 		name string
 		cal  calendar
 		want []Event
 	}{
-		// TODO: Add test cases.
-		{"test1", "laser", []Event{{startTimeSeed.UTC(), endTimeSeed.UTC(), "testDescription", "testOwner"}}},
+		{"test1", "test", []Event{{startTimeSeed.UTC(), endTimeSeed.UTC(), "testDescription", "testOwner"}}},
 	}
 	for _, tt := range tests {
 
@@ -75,7 +70,11 @@ func Test_calendar_addEvent(t *testing.T) {
 		args    args
 		wantErr bool
 	}{
-	// TODO: Add test cases.
+		{"duplicate event test", "test", args{Event{startTimeSeed, endTimeSeed, "duplicate event", "testUser"}}, true},
+		{"overlapping event test 1", "test", args{Event{startTimeSeed.Add(30 * time.Minute), endTimeSeed.Add(30 * time.Minute), "overlap event", "testUser"}}, true},
+		{"overlapping event test 2", "test", args{Event{startTimeSeed.Add(-30 * time.Minute), endTimeSeed.Add(-30 * time.Minute), "overalp event", "testUser"}}, true},
+		{"good event test", "test", args{Event{startTimeSeed.Add(time.Hour), endTimeSeed.Add(time.Hour), "new event", "testUser"}}, false},
+		{"backwards event test", "test", args{Event{endTimeSeed.Add(-1 * time.Hour), startTimeSeed.Add(-1 * time.Hour), "backwards event", "testUser"}}, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -96,7 +95,8 @@ func Test_calendar_eventFits(t *testing.T) {
 		args args
 		want bool
 	}{
-	// TODO: Add test cases.
+		{},
+		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -119,7 +119,9 @@ func TestEvent_getDuration(t *testing.T) {
 		fields fields
 		want   time.Duration
 	}{
-	// TODO: Add test cases.
+		{"regular event", fields{startTimeSeed, endTimeSeed, "", ""}, (59 * time.Minute)},
+		{"zero time event", fields{startTimeSeed, startTimeSeed, "", ""}, 0},
+		{"backwards event", fields{endTimeSeed, startTimeSeed, "", ""}, (-59 * time.Minute)},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -136,32 +138,41 @@ func TestEvent_getDuration(t *testing.T) {
 	}
 }
 
-func TestEvent_New(t *testing.T) {
-	type fields struct {
-		StartTime   time.Time
-		EndTime     time.Time
-		Description string
-		Owner       string
-	}
+func TestEvent_NewEvent(t *testing.T) {
 	type args struct {
 		eventMap map[string]string
 	}
 	tests := []struct {
-		name   string
-		fields fields
-		args   args
+		name string
+		args args
 	}{
-	// TODO: Add test cases.
+		{"event test 1",
+			args{map[string]string{
+				"startTime":   startTimeSeed.Format(time.RFC3339),
+				"endTime":     endTimeSeed.Format(time.RFC3339),
+				"description": "testDescription",
+				"owner":       "testOwner",
+			},
+			},
+		},
+		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			e := &Event{
-				StartTime:   tt.fields.StartTime,
-				EndTime:     tt.fields.EndTime,
-				Description: tt.fields.Description,
-				Owner:       tt.fields.Owner,
+			e := NewEvent(tt.args.eventMap)
+			if e.StartTime.Format(time.RFC3339) != tt.args.eventMap["startTime"] {
+				t.Errorf("NewEvent() startTime is not equal to map")
 			}
-			e.New(tt.args.eventMap)
+			if e.EndTime.Format(time.RFC3339) != tt.args.eventMap["endTime"] {
+				t.Errorf("NewEvent() endTime is not equal to map")
+			}
+			if e.Description != tt.args.eventMap["description"] {
+				t.Errorf("NewEvent() description is not equal to map")
+			}
+			if e.Owner != tt.args.eventMap["owner"] {
+				t.Errorf("NewEvent() owner is not equal to map")
+			}
+
 		})
 	}
 }

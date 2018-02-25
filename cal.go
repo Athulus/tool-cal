@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/kr/pretty"
 	"github.com/mediocregopher/radix.v2/pool"
 )
 
@@ -38,7 +39,7 @@ func (cal calendar) fetchEvents() []Event {
 	}
 	defer db.Put(conn)
 
-	keys, err := db.Cmd("lrange", cal, 0, -1).Array()
+	keys, err := db.Cmd("LRANGE", cal, 0, -1).Array()
 	if err != nil {
 		log.Fatalln(err.Error())
 	}
@@ -49,7 +50,7 @@ func (cal calendar) fetchEvents() []Event {
 		if err != nil {
 			log.Fatalln(err.Error())
 		}
-		event.New(eventMap)
+		event = NewEvent(eventMap)
 		events = append(events, event)
 
 	}
@@ -57,14 +58,17 @@ func (cal calendar) fetchEvents() []Event {
 }
 
 func (cal calendar) addEvent(e Event) error {
+	if e.StartTime.After(e.EndTime) {
+		return errors.New("the event must start before it ends")
+	}
 	if cal.eventFits(e) {
 		conn, err := db.Get()
 		if err != nil {
 			return err
 		}
 		defer db.Put(conn)
-		err = db.Cmd("HSET", e.StartTime.Format(time.RFC3339), "startTime", e.StartTime.Format(time.RFC3339),
-			"endTime", e.EndTime.Format(time.RFC3339), "Description", e.Description, "Owner", e.Owner).Err
+		err = db.Cmd("HMSET", e.StartTime.Format(time.RFC3339), "startTime", e.StartTime.Format(time.RFC3339),
+			"endTime", e.EndTime.Format(time.RFC3339), "description", e.Description, "owner", e.Owner).Err
 		if err != nil {
 			return err
 		}
@@ -106,10 +110,11 @@ func (e Event) getDuration() time.Duration {
 	return e.EndTime.Sub(e.StartTime)
 }
 
-//New creates a new Event from the redis map
-func (e *Event) New(eventMap map[string]string) {
+//NewEvent creates a new Event from the redis map
+func NewEvent(eventMap map[string]string) Event {
 	var err error
 	var ok bool
+	var e Event
 	e.StartTime, err = time.Parse(time.RFC3339, eventMap["startTime"])
 	if err != nil {
 		log.Fatalln(err.Error())
@@ -120,10 +125,12 @@ func (e *Event) New(eventMap map[string]string) {
 	}
 	e.Description, ok = eventMap["description"]
 	if !ok {
+		pretty.Println(eventMap)
 		log.Fatalln("problem creating event: description")
 	}
 	e.Owner, ok = eventMap["owner"]
 	if !ok {
 		log.Fatalln("problem creating event: owner")
 	}
+	return e
 }
