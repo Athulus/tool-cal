@@ -1,5 +1,14 @@
+# tool- cal
+an event calendar API to manage the use of tools at HackRva
 
-# tool scheduling app 
+## building and running
+1.  `git clone` tool-cal repo into your gopath/src
+2. `cd tool-cal`
+3. `dep ensure`
+4. `go build`
+5. `./tool-cal`
+
+## notes for tool scheduling app 
 - calendar    
     - calendar for each tool    
     - user can add time to a tool
@@ -9,7 +18,7 @@
     - tool use time estimation    
         - send file to be analyzed
 
-# endpoints
+## endpoints
  - calendar
    - {tool}
      - events
