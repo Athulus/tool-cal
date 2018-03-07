@@ -16,9 +16,9 @@ var endTimeSeed time.Time
 
 //this is some trickery so i can get my miniredis server setup before
 // the init function in cal.go runs
-var _ struct{} = testInit()
+var _ struct{} = caltestInit()
 
-func testInit() (x struct{}) {
+func caltestInit() (x struct{}) {
 	var err error
 	s, err = miniredis.Run()
 	if err != nil {
@@ -95,8 +95,7 @@ func Test_calendar_eventFits(t *testing.T) {
 		args args
 		want bool
 	}{
-		{},
-		// TODO: Add test cases.
+	// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
