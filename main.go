@@ -20,15 +20,14 @@ func main() {
 	router.HandleFunc("/calendar/{tool}/events", getEvents).Methods("GET")
 	router.HandleFunc("/calendar/{tool}/events", addEvent).Methods("POST")
 
+	fs := http.FileServer(http.Dir("static"))
+	router.PathPrefix("/static").Handler(http.StripPrefix("/static/", fs))
+
 	log.Fatal(http.ListenAndServe(":8080", router))
 }
 
 func health(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("health check, ok"))
-}
-
-func auth(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Not implimented!"))
 }
 
 func addEvent(w http.ResponseWriter, r *http.Request) {
