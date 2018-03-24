@@ -12,13 +12,13 @@ an event calendar API to manage the use of tools at HackRva
 ## code organization
 all code is in the `main` package
 
-`main.go` has all of the http server code, inluding the  http handler functions
+[main.go](main.go) has all of the http server code, inluding the  http handler functions
 
-`cal.go` has the code that deals with data access of the calendar events from redis
+[cal.go](cal.go) has the code that deals with data access of the calendar events from redis
 
-`middleware.go` (currently empty) should have all of the http middleware functions if they are needed
+[middleware.go](middleware.go) (currently empty) should have all of the http middleware functions if they are needed
 
-`user.go` (currently empty) will hold the code to deal with whatever users will do?
+[user.go](user.go) (currently empty) will hold the code to deal with whatever users will do?
 
 ## notes for tool scheduling app 
 - calendar    
