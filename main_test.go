@@ -132,8 +132,9 @@ func Test_getEvents(t *testing.T) {
 			getEvents(tt.args.w, tt.args.r)
 			resp := tt.args.w.Result()
 			body, _ := ioutil.ReadAll(resp.Body)
-			if string(body) != "[{\"start_time\":\"2018-02-21T01:00:00Z\",\"end_time\":\"2018-02-21T01:59:00Z\",\"description\":\"testDescription\",\"owner\":\"testOwner\"}]" {
-				t.Errorf("incorrect response body: %v", string(body))
+			expected := "{\"start_time\":\"2018-02-21T01:00:00Z\",\"end_time\":\"2018-02-21T01:59:00Z\",\"description\":\"testDescription\",\"owner\":\"testOwner\"}"
+			if !strings.Contains(string(body), expected) {
+				t.Errorf("expected the following entry in response body: %v. response body: %v", expected, string(body))
 			}
 
 		})

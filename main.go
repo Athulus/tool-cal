@@ -20,8 +20,8 @@ func main() {
 	router.HandleFunc("/calendar/{tool}/events", getEvents).Methods("GET")
 	router.HandleFunc("/calendar/{tool}/events", addEvent).Methods("POST")
 
-	fs := http.FileServer(http.Dir("static"))
-	router.PathPrefix("/static").Handler(http.StripPrefix("/static/", fs))
+	// fs := http.FileServer(http.Dir("static"))
+	// router.PathPrefix("/static").Handler(http.StripPrefix("/static/", fs))
 
 	log.Fatal(http.ListenAndServe(":8080", router))
 }
