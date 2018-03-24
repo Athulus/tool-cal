@@ -1,7 +1,7 @@
 version: '3'
 services:
   tool-cal:
-    build: .
+    image: tool-cal
     ports:
       - "8080:8080"
     links:
@@ -12,3 +12,6 @@ services:
       - "redis"
   redis:
     image: "redis"
+    ports:
+      - "6379:6379"
+      

@@ -11,4 +11,9 @@ deps:
 docker:
 		docker build -t ${NAME} .
 
+compose:
+		docker-compose up
+
 docker-build: build docker		
+
+deploy: docker-build compose
