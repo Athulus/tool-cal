@@ -6,9 +6,8 @@ an event calendar API to manage the use of tools at HackRva
 ## building and running
 1.  `git clone` tool-cal repo into your gopath/src
 2. `cd tool-cal`
-3. `dep ensure`
-4. `go build`
-5. `./tool-cal`
+3. `make` will run install dependencies, run test, and compile a static binary
+4. `make deploy` will build a docker image and run the image and a redis server with docker-compose
 
 ## notes for tool scheduling app 
 - calendar    
