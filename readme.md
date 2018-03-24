@@ -1,6 +1,8 @@
 # tool- cal
 an event calendar API to manage the use of tools at HackRva
 
+[![Build Status](https://travis-ci.org/Athulus/tool-cal.svg?branch=master)](https://travis-ci.org/Athulus/tool-cal)
+
 ## building and running
 1.  `git clone` tool-cal repo into your gopath/src
 2. `cd tool-cal`
