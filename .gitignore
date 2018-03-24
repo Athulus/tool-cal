@@ -21,3 +21,4 @@ debug
 vendor/**
 
 .vscode/launch.json
+dump.rdb
