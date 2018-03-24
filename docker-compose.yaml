@@ -1,0 +1,14 @@
+version: '3'
+services:
+  tool-cal:
+    build: .
+    ports:
+      - "8080:8080"
+    links:
+      - redis
+    environment:
+      - redisAddress=redis:6379
+    depends_on:
+      - "redis"
+  redis:
+    image: "redis"
