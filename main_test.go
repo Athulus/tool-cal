@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -69,7 +70,6 @@ func Test_health(t *testing.T) {
 				httptest.NewRequest(http.MethodGet, "http://test/health", nil),
 			},
 		},
-		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -93,7 +93,13 @@ func Test_addEvent(t *testing.T) {
 		name string
 		args args
 	}{
-	// TODO: Add test cases.
+		{
+			"add event test",
+			args{
+				httptest.NewRecorder(),
+				httptest.NewRequest(http.MethodPost, "http://test/calendar/test/events", strings.NewReader("[{\"start_time\":\"2018-03-21T01:00:00Z\",\"end_time\":\"2018-03-21T01:59:00Z\",\"description\":\"testDescription\",\"owner\":\"testOwner\"}]")),
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

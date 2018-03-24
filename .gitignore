@@ -20,3 +20,4 @@ debug
 #vendor dependencies
 vendor/**
 
+.vscode/launch.json
