@@ -1,90 +1,82 @@
-package main
+package db
 
 import (
+	"encoding/binary"
+	"encoding/json"
 	"errors"
 	"log"
-	"os"
 	"time"
 
 	"github.com/kr/pretty"
-	"github.com/mediocregopher/radix.v2/pool"
+	bolt "go.etcd.io/bbolt"
 )
 
-var db *pool.Pool
-var redisAddress string
+var db *bolt.DB
+var eventBucket = []byte("events")
 
-func init() {
+//Init opens or creates the database
+func Init(dbPath string) error {
 	var err error
-	var exists bool
-	redisAddress, exists = os.LookupEnv("redisAddress")
-	if !exists {
-		// try localhost if envvironment variable is not set
-		redisAddress = "localhost:6379"
-	}
-	//set up redis
-	db, err = pool.New("tcp", redisAddress, 10)
+	db, err = bolt.Open(dbPath, 0600, &bolt.Options{Timeout: 1 * time.Second})
 	if err != nil {
-		log.Panic(err)
+		return err
 	}
 
+	return db.Update(func(tx *bolt.Tx) error {
+		_, err := tx.CreateBucketIfNotExists(eventBucket)
+		return err
+	})
 }
 
-type calendar string
+type Calendar string
 
-func (cal calendar) fetchEvents() []Event {
+func (cal Calendar) FetchEvents() ([]Event, error) {
 	var events []Event
-	conn, err := db.Get()
-	if err != nil {
-		log.Fatalln(err.Error())
-	}
-	defer db.Put(conn)
-
-	keys, err := db.Cmd("LRANGE", cal, 0, -1).Array()
-	if err != nil {
-		log.Fatalln(err.Error())
-	}
-
-	for _, key := range keys {
-		var event Event
-		eventMap, err := db.Cmd("HGETALL", key).Map()
-		if err != nil {
-			log.Fatalln(err.Error())
+	db.View(func(tx *bolt.Tx) error {
+		c := tx.Bucket(eventBucket).Cursor()
+		for k, v := c.First(); k != nil; k, v = c.Next() {
+			var event Event
+			err := json.Unmarshal(v, event)
+			if err != nil {
+				return err
+			}
+			events = append(events, event)
 		}
-		event = NewEvent(eventMap)
-		events = append(events, event)
-
-	}
-	return events
+		return nil
+	})
+	return events, nil
 }
 
-func (cal calendar) addEvent(e Event) error {
+func (cal Calendar) AddEvent(e Event) error {
 	if e.StartTime.After(e.EndTime) {
 		return errors.New("the event must start before it ends")
 	}
 	if cal.eventFits(e) {
-		conn, err := db.Get()
+		var id int
+		j, err := json.Marshal(e)
 		if err != nil {
 			return err
 		}
-		defer db.Put(conn)
-		err = db.Cmd("HMSET", e.StartTime.Format(time.RFC3339), "startTime", e.StartTime.Format(time.RFC3339),
-			"endTime", e.EndTime.Format(time.RFC3339), "description", e.Description, "owner", e.Owner).Err
-		if err != nil {
-			return err
-		}
-		err = db.Cmd("LPUSH", cal, e.StartTime.Format(time.RFC3339)).Err
-		if err != nil {
-			return err
-		}
+		db.Update(func(tx *bolt.Tx) error {
+			b := tx.Bucket(eventBucket)
+			id64, _ := b.NextSequence()
+			id = int(id64)
+			key := itob(id)
+			return b.Put(key, j)
+		})
 	} else {
 		return errors.New("this event conflicts with another event in the calendar")
 	}
 	return nil
 }
 
-func (cal calendar) eventFits(event Event) bool {
+func (cal Calendar) eventFits(event Event) bool {
 
-	for _, e := range cal.fetchEvents() {
+	events, err := cal.FetchEvents()
+	if err != nil {
+		return false
+	}
+	for _, e := range events {
 		//this conditional is gross looking
 		// basiccally if there is an overlapping event return false
 		if (e.StartTime.Before(event.StartTime) && e.EndTime.After(event.StartTime)) ||
@@ -133,4 +125,14 @@ func NewEvent(eventMap map[string]string) Event {
 		log.Fatalln("problem creating event: owner")
 	}
 	return e
+}
+
+func itob(v int) []byte {
+	b := make([]byte, 8)
+	binary.BigEndian.PutUint64(b, uint64(v))
+	return b
+}
+
+func btoi(b []byte) int {
+	return int(binary.BigEndian.Uint64(b))
 }

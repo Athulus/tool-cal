@@ -1,4 +1,4 @@
-package main
+package db
 
 import (
 	"log"
@@ -95,7 +95,7 @@ func Test_calendar_eventFits(t *testing.T) {
 		args args
 		want bool
 	}{
-	// TODO: Add test cases.
+		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
