@@ -1,60 +1,57 @@
 package db
 
 import (
-	"log"
-	"os"
+	"encoding/json"
 	"reflect"
 	"testing"
 	"time"
 
-	"github.com/alicebob/miniredis"
+	bolt "go.etcd.io/bbolt"
 )
 
-var s *miniredis.Miniredis
 var startTimeSeed time.Time
 var endTimeSeed time.Time
 
-//this is some trickery so i can get my miniredis server setup before
-// the init function in cal.go runs
-var _ struct{} = caltestInit()
+var _ struct{} = testInit()
 
-func caltestInit() (x struct{}) {
+func testInit() (x struct{}) {
 	var err error
-	s, err = miniredis.Run()
+	db, err = bolt.Open("test.db", 0600, &bolt.Options{Timeout: 1 * time.Second})
 	if err != nil {
 		panic(err)
 	}
-	log.Println(s.Addr())
-	os.Setenv("redisAddress", s.Addr())
+	startTimeSeed, err = time.Parse(time.RFC3339, "2019-05-21T01:00:00-00:00")
+	endTimeSeed, err = time.Parse(time.RFC3339, "2019-05-21T01:59:00-00:00")
 
-	// set up the redis server for testing
-	startTimeSeed, err = time.Parse(time.RFC3339, "2018-02-21T01:00:00-00:00")
-	endTimeSeed, err = time.Parse(time.RFC3339, "2018-02-21T01:59:00-00:00")
-	//toplevel collection of calendars
-	s.Lpush("cals", "test")
-	// adding event keys to a 'laser' calendar
-	s.Lpush("test", startTimeSeed.Format(time.RFC3339))
-	//adding events
-	s.HSet(startTimeSeed.Format(time.RFC3339), "startTime", startTimeSeed.Format(time.RFC3339))
-	s.HSet(startTimeSeed.Format(time.RFC3339), "endTime", endTimeSeed.Format(time.RFC3339))
-	s.HSet(startTimeSeed.Format(time.RFC3339), "description", "testDescription")
-	s.HSet(startTimeSeed.Format(time.RFC3339), "owner", "testOwner")
+	err = db.Update(func(tx *bolt.Tx) error {
+		b, err := tx.CreateBucketIfNotExists([]byte("calTest"))
+		offset := (5 * time.Hour)
+		value, err := json.Marshal(Event{5, startTimeSeed.Add(offset).UTC(), endTimeSeed.Add(offset).UTC(), "testDescription", "testOwner"})
+		if err != nil {
+			return err
+		}
+		err = b.Put(itob(5), value)
+		return err
+	})
+	if err != nil {
+		panic(err)
+	}
 
 	return
 }
 func Test_calendar_fetchEvents(t *testing.T) {
 	tests := []struct {
 		name string
-		cal  calendar
+		cal  Calendar
 		want []Event
 	}{
-		{"test1", "test", []Event{{startTimeSeed.UTC(), endTimeSeed.UTC(), "testDescription", "testOwner"}}},
+		{"test1", "test", []Event{{0, startTimeSeed.UTC(), endTimeSeed.UTC(), "testDescription", "testOwner"}}},
 	}
 	for _, tt := range tests {
 
 		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.cal.fetchEvents(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("calendar.fetchEvents() = %v, want %v", got, tt.want)
+			if got, err := tt.cal.FetchEvents(); !reflect.DeepEqual(got, tt.want) && err != nil {
+				t.Errorf("calendar.FetchEvents() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -66,20 +63,20 @@ func Test_calendar_addEvent(t *testing.T) {
 	}
 	tests := []struct {
 		name    string
-		cal     calendar
+		cal     Calendar
 		args    args
 		wantErr bool
 	}{
-		{"duplicate event test", "test", args{Event{startTimeSeed, endTimeSeed, "duplicate event", "testUser"}}, true},
-		{"overlapping event test 1", "test", args{Event{startTimeSeed.Add(30 * time.Minute), endTimeSeed.Add(30 * time.Minute), "overlap event", "testUser"}}, true},
-		{"overlapping event test 2", "test", args{Event{startTimeSeed.Add(-30 * time.Minute), endTimeSeed.Add(-30 * time.Minute), "overalp event", "testUser"}}, true},
-		{"good event test", "test", args{Event{startTimeSeed.Add(time.Hour), endTimeSeed.Add(time.Hour), "new event", "testUser"}}, false},
-		{"backwards event test", "test", args{Event{endTimeSeed.Add(-1 * time.Hour), startTimeSeed.Add(-1 * time.Hour), "backwards event", "testUser"}}, true},
+		{"duplicate event test", "test", args{Event{0, startTimeSeed, endTimeSeed, "duplicate event", "testUser"}}, true},
+		{"overlapping event test 1", "test", args{Event{1, startTimeSeed.Add(30 * time.Minute), endTimeSeed.Add(30 * time.Minute), "overlap event", "testUser"}}, true},
+		{"overlapping event test 2", "test", args{Event{2, startTimeSeed.Add(-30 * time.Minute), endTimeSeed.Add(-30 * time.Minute), "overalp event", "testUser"}}, true},
+		{"good event test", "test", args{Event{3, startTimeSeed.Add(time.Hour), endTimeSeed.Add(time.Hour), "new event", "testUser"}}, false},
+		{"backwards event test", "test", args{Event{4, endTimeSeed.Add(-1 * time.Hour), startTimeSeed.Add(-1 * time.Hour), "backwards event", "testUser"}}, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := tt.cal.addEvent(tt.args.e); (err != nil) != tt.wantErr {
-				t.Errorf("calendar.addEvent() error = %v, wantErr %v", err, tt.wantErr)
+			if err := tt.cal.AddEvent(tt.args.e); (err != nil) != tt.wantErr {
+				t.Errorf("calendar.AddEvent() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
@@ -91,7 +88,7 @@ func Test_calendar_eventFits(t *testing.T) {
 	}
 	tests := []struct {
 		name string
-		cal  calendar
+		cal  Calendar
 		args args
 		want bool
 	}{
