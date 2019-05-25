@@ -7,7 +7,7 @@ build:
 test:
 		go test -v
 install:
-		dep ensure -v
+		go mod download
 docker:
 		docker build -t ${NAME} .
 

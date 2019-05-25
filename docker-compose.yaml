@@ -4,14 +4,4 @@ services:
     image: tool-cal
     ports:
       - "8080:8080"
-    links:
-      - redis
-    environment:
-      - redisAddress=redis:6379
-    depends_on:
-      - "redis"
-  redis:
-    image: "redis"
-    ports:
-      - "6379:6379"
       
