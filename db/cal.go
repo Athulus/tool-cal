@@ -18,10 +18,6 @@ var eventBucket = []byte("events")
 func Init(dbPath string) error {
 	var err error
 	db, err = bolt.Open(dbPath, 0600, &bolt.Options{Timeout: 1 * time.Second})
-	if err != nil {
-		return err
-	}
-
 	return err
 }
 
@@ -105,7 +101,7 @@ func (cal Calendar) AddEvent(e Event) error {
 //DeleteEvent removes an evnet from the calendar bucket
 func (cal Calendar) DeleteEvent(id int) error {
 	err := db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket(eventBucket)
+		b := tx.Bucket([]byte(cal))
 		err := b.Delete(itob(id))
 		return err
 	})
