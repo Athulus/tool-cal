@@ -2,6 +2,7 @@ package db
 
 import (
 	"encoding/json"
+	"os"
 	"reflect"
 	"testing"
 	"time"
@@ -12,11 +13,9 @@ import (
 var startTimeSeed time.Time
 var endTimeSeed time.Time
 
-var _ struct{} = testInit()
-
-func testInit() (x struct{}) {
+func setup() {
 	var err error
-	db, err = bolt.Open("test.db", 0600, &bolt.Options{Timeout: 1 * time.Second})
+	err = Init("test.db")
 	if err != nil {
 		panic(err)
 	}
@@ -25,8 +24,7 @@ func testInit() (x struct{}) {
 
 	err = db.Update(func(tx *bolt.Tx) error {
 		b, err := tx.CreateBucketIfNotExists([]byte("calTest"))
-		offset := (5 * time.Hour)
-		value, err := json.Marshal(Event{5, startTimeSeed.Add(offset).UTC(), endTimeSeed.Add(offset).UTC(), "testDescription", "testOwner"})
+		value, err := json.Marshal(Event{0, startTimeSeed.UTC(), endTimeSeed.UTC(), "testDescription", "testOwner"})
 		if err != nil {
 			return err
 		}
@@ -39,13 +37,30 @@ func testInit() (x struct{}) {
 
 	return
 }
+
+func teardown() {
+	err := db.Update(func(tx *bolt.Tx) error {
+		return tx.DeleteBucket([]byte("calTest"))
+	})
+	if err != nil {
+		panic(err)
+	}
+}
+
+func TestMain(m *testing.M) {
+	setup()
+	code := m.Run()
+	teardown()
+	os.Exit(code)
+}
+
 func Test_calendar_fetchEvents(t *testing.T) {
 	tests := []struct {
 		name string
 		cal  Calendar
 		want []Event
 	}{
-		{"test1", "test", []Event{{0, startTimeSeed.UTC(), endTimeSeed.UTC(), "testDescription", "testOwner"}}},
+		{"test1", "test", []Event{{1, startTimeSeed.UTC(), endTimeSeed.UTC(), "testDescription", "testOwner"}}},
 	}
 	for _, tt := range tests {
 
@@ -73,6 +88,7 @@ func Test_calendar_addEvent(t *testing.T) {
 		{"good event test", "test", args{Event{3, startTimeSeed.Add(time.Hour), endTimeSeed.Add(time.Hour), "new event", "testUser"}}, false},
 		{"backwards event test", "test", args{Event{4, endTimeSeed.Add(-1 * time.Hour), startTimeSeed.Add(-1 * time.Hour), "backwards event", "testUser"}}, true},
 	}
+	setup()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := tt.cal.AddEvent(tt.args.e); (err != nil) != tt.wantErr {
@@ -80,6 +96,7 @@ func Test_calendar_addEvent(t *testing.T) {
 			}
 		})
 	}
+	teardown()
 }
 
 func Test_calendar_eventFits(t *testing.T) {
